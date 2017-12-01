@@ -243,7 +243,7 @@ int CNAME(BLASLONG m, FLOAT *a, FLOAT *x, BLASLONG incx, FLOAT *buffer, int nthr
   blas_arg_t args;
   blas_queue_t queue[MAX_CPU_NUMBER];
   BLASLONG range_m[MAX_CPU_NUMBER + 1];
-  BLASLONG range_n[MAX_CPU_NUMBER];
+  BLASLONG range_n[MAX_CPU_NUMBER + 1];
 
   BLASLONG width, i, num_cpu;
 
@@ -307,7 +307,8 @@ int CNAME(BLASLONG m, FLOAT *a, FLOAT *x, BLASLONG incx, FLOAT *buffer, int nthr
 
     range_m[MAX_CPU_NUMBER - num_cpu - 1] = range_m[MAX_CPU_NUMBER - num_cpu] - width;
     range_n[num_cpu] = num_cpu * (((m + 15) & ~15) + 16);
-
+    if (range_n[num_cpu] > m) range_n[num_cpu] = m;
+    
     queue[num_cpu].mode    = mode;
     queue[num_cpu].routine = tpmv_kernel;
     queue[num_cpu].args    = &args;
@@ -346,6 +347,7 @@ int CNAME(BLASLONG m, FLOAT *a, FLOAT *x, BLASLONG incx, FLOAT *buffer, int nthr
 
     range_m[num_cpu + 1] = range_m[num_cpu] + width;
     range_n[num_cpu] = num_cpu * (((m + 15) & ~15) + 16);
+    if (range_n[num_cpu] > m) range_n[num_cpu] = m;
 
     queue[num_cpu].mode    = mode;
     queue[num_cpu].routine = tpmv_kernel;

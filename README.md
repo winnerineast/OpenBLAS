@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/xianyi/OpenBLAS](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/xianyi/OpenBLAS?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Travis CI: [![Build Status](https://travis-ci.org/xianyi/OpenBLAS.png?branch=develop)](https://travis-ci.org/xianyi/OpenBLAS)
+Travis CI: [![Build Status](https://travis-ci.org/xianyi/OpenBLAS.svg?branch=develop)](https://travis-ci.org/xianyi/OpenBLAS)
 
 AppVeyor: [![Build status](https://ci.appveyor.com/api/projects/status/09sohd35n8nkkx64/branch/develop?svg=true)](https://ci.appveyor.com/project/xianyi/openblas/branch/develop)
 ## Introduction
@@ -51,18 +51,18 @@ The library can be installed as below -
 
  * On Ubuntu:
 
-    wget -q http://public.dhe.ibm.com/software/server/POWER/Linux/xl-compiler/eval/ppc64le/ubuntu/public.gpg -O- | sudo apt-key add -
-    echo "deb http://public.dhe.ibm.com/software/server/POWER/Linux/xl-compiler/eval/ppc64le/ubuntu/ trusty main" | sudo tee /etc/apt/sources.list.d/ibm-xl-compiler-eval.list
-    sudo apt-get update
-    sudo apt-get install libxlmass-devel.8.1.3
+    wget -q http://public.dhe.ibm.com/software/server/POWER/Linux/xl-compiler/eval/ppc64le/ubuntu/public.gpg -O- | sudo apt-key add -</br>
+    echo "deb http://public.dhe.ibm.com/software/server/POWER/Linux/xl-compiler/eval/ppc64le/ubuntu/ trusty main" | sudo tee /etc/apt/sources.list.d/ibm-xl-compiler-eval.list</br>
+    sudo apt-get update</br>
+    sudo apt-get install libxlmass-devel.8.1.5</br>
 
  * On RHEL/CentOS:
 
-    wget http://public.dhe.ibm.com/software/server/POWER/Linux/xl-compiler/eval/ppc64le/rhel7/repodata/repomd.xml.key
-    sudo rpm --import repomd.xml.key
-    wget http://public.dhe.ibm.com/software/server/POWER/Linux/xl-compiler/eval/ppc64le/rhel7/ibm-xl-compiler-eval.repo
-    sudo cp ibm-xl-compiler-eval.repo /etc/yum.repos.d/
-    sudo yum install libxlmass-devel.8.1.3
+    wget http://public.dhe.ibm.com/software/server/POWER/Linux/xl-compiler/eval/ppc64le/rhel7/repodata/repomd.xml.key</br>
+    sudo rpm --import repomd.xml.key</br>
+    wget http://public.dhe.ibm.com/software/server/POWER/Linux/xl-compiler/eval/ppc64le/rhel7/ibm-xl-compiler-eval.repo</br>
+    sudo cp ibm-xl-compiler-eval.repo /etc/yum.repos.d/</br>
+    sudo yum install libxlmass-devel.8.1.5</br>
 
 After installing MASS library, compile openblas with USE_MASS=1.
 
@@ -106,8 +106,11 @@ Please read GotoBLAS_01Readme.txt
 - **ARMV8**: Experimental
 - **ARM Cortex-A57**: Experimental
 
+#### PPC/PPC64
+- **POWER8**: Optmized Level-3 BLAS and some Level-1, only with USE_OPENMP=1
+
 #### IBM zEnterprise System:
-- **Z13**: Optimized Level-3 BLAS 
+- **Z13**: Optimized Level-3 BLAS and Level-1,2 (double precision)
      
 
 ### Support OS:

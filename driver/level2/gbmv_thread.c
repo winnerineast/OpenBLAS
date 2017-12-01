@@ -177,7 +177,7 @@ int CNAME(BLASLONG m, BLASLONG n, BLASLONG ku, BLASLONG kl, FLOAT *alpha, FLOAT 
 
   blas_arg_t args;
   blas_queue_t queue[MAX_CPU_NUMBER];
-  BLASLONG range_m[MAX_CPU_NUMBER];
+  BLASLONG range_m[MAX_CPU_NUMBER + 1];
   BLASLONG range_n[MAX_CPU_NUMBER + 1];
 
   BLASLONG width, i, num_cpu;
@@ -230,8 +230,10 @@ int CNAME(BLASLONG m, BLASLONG n, BLASLONG ku, BLASLONG kl, FLOAT *alpha, FLOAT 
 
 #ifndef TRANSA
     range_m[num_cpu] = num_cpu * ((m + 15) & ~15);
+    if (range_m[num_cpu] > m) range_m[num_cpu] = m;
 #else
     range_m[num_cpu] = num_cpu * ((n + 15) & ~15);
+    if (range_m[num_cpu] > n) range_m[num_cpu] = n;
 #endif
 
     queue[num_cpu].mode    = mode;

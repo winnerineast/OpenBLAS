@@ -155,7 +155,6 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef DYNAMIC_ARCH
 gotoblas_t *gotoblas = NULL;
 #endif
-
 extern void openblas_warning(int verbose, const char * msg);
 
 #ifndef SMP
@@ -175,8 +174,46 @@ int get_num_procs(void);
 #else
 int get_num_procs(void) {
   static int nums = 0;
+cpu_set_t *cpusetp;
+size_t size;
+int ret;
+int i,n;
+
   if (!nums) nums = sysconf(_SC_NPROCESSORS_CONF);
+#if !defined(OS_LINUX)
+     return nums;
+#endif
+
+#if !defined(__GLIBC_PREREQ)
+   return nums;
+#else
+ #if !__GLIBC_PREREQ(2, 3)
+   return nums;
+ #endif
+
+ #if !__GLIBC_PREREQ(2, 7)
+  ret = sched_getaffinity(0,sizeof(cpu_set_t), cpusetp);
+  if (ret!=0) return nums;
+  n=0;
+  #if !__GLIBC_PREREQ(2, 6)
+  for (i=0;i<nums;i++)
+     if (CPU_ISSET(i,cpusetp)) n++;
+  nums=n;
+  #else
+  nums = CPU_COUNT(sizeof(cpu_set_t),cpusetp);
+  #endif
   return nums;
+ #else
+  cpusetp = CPU_ALLOC(nums);
+  if (cpusetp == NULL) return nums;
+  size = CPU_ALLOC_SIZE(nums);
+  ret = sched_getaffinity(0,size,cpusetp);
+  if (ret!=0) return nums;
+  nums = CPU_COUNT_S(size,cpusetp);
+  CPU_FREE(cpusetp);
+  return nums;
+ #endif
+#endif
 }
 #endif
 #endif
@@ -1015,16 +1052,17 @@ void *blas_memory_alloc(int procpos){
   mypos = WhereAmI();
 
   position = mypos;
-  while (position > NUM_BUFFERS) position >>= 1;
+  while (position >= NUM_BUFFERS) position >>= 1;
 
   do {
     if (!memory[position].used && (memory[position].pos == mypos)) {
-
-      blas_lock(&memory[position].lock);
+      LOCK_COMMAND(&alloc_lock);
+/*      blas_lock(&memory[position].lock);*/
 
       if (!memory[position].used) goto allocation;
 
-      blas_unlock(&memory[position].lock);
+      UNLOCK_COMMAND(&alloc_lock);
+/*      blas_unlock(&memory[position].lock);*/
     }
 
     position ++;
@@ -1038,12 +1076,13 @@ void *blas_memory_alloc(int procpos){
 
   do {
 /*    if (!memory[position].used) { */
-
-      blas_lock(&memory[position].lock);
+      LOCK_COMMAND(&alloc_lock);
+/*      blas_lock(&memory[position].lock);*/
 
       if (!memory[position].used) goto allocation;
-
-      blas_unlock(&memory[position].lock);
+      
+      UNLOCK_COMMAND(&alloc_lock);
+/*      blas_unlock(&memory[position].lock);*/
 /*    } */
 
     position ++;
@@ -1060,7 +1099,8 @@ void *blas_memory_alloc(int procpos){
 
   memory[position].used = 1;
 
-  blas_unlock(&memory[position].lock);
+  UNLOCK_COMMAND(&alloc_lock);
+/*  blas_unlock(&memory[position].lock);*/
 
   if (!memory[position].addr) {
     do {
@@ -1164,8 +1204,8 @@ void blas_memory_free(void *free_area){
   position = 0;
   LOCK_COMMAND(&alloc_lock);
 
-  while ((memory[position].addr != free_area)
-	 && (position < NUM_BUFFERS)) position++;
+  while ((position < NUM_BUFFERS) && (memory[position].addr != free_area))
+    position++;
 
   if (memory[position].addr != free_area) goto error;
 
@@ -1479,12 +1519,30 @@ static int on_process_term(void)
 #else
 #pragma comment(linker, "/INCLUDE:__tls_used")
 #endif
-#pragma data_seg(push, old_seg)
+
+#ifdef _WIN64
+#pragma const_seg(".CRT$XLB")
+#else
 #pragma data_seg(".CRT$XLB")
+#endif
 static void (APIENTRY *dll_callback)(HINSTANCE h, DWORD ul_reason_for_call, PVOID pv) = DllMain;
+#ifdef _WIN64
+#pragma const_seg()
+#else
+#pragma data_seg()
+#endif
+
+#ifdef _WIN64
+#pragma const_seg(".CRT$XTU")
+#else
 #pragma data_seg(".CRT$XTU")
+#endif
 static int(*p_process_term)(void) = on_process_term;
-#pragma data_seg(pop, old_seg)
+#ifdef _WIN64
+#pragma const_seg()
+#else
+#pragma data_seg()
+#endif
 #endif
 
 #if (defined(C_PGI) || (!defined(C_SUN) && defined(F_INTERFACE_SUN))) && (defined(ARCH_X86) || defined(ARCH_X86_64))

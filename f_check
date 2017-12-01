@@ -33,6 +33,7 @@ if ($compiler eq "") {
               "ppuf77", "ppuf95", "ppuf90", "ppuxlf",
 	      "pathf90", "pathf95",
 	      "pgf95", "pgf90", "pgf77",
+	      "flang",
               "ifort");
 
 OUTER:
@@ -78,8 +79,13 @@ if ($compiler eq "") {
 		$vendor = GFORTRAN;
 		$openmp = "-fopenmp";
 	    } else {
-		$vendor = G77;
-		$openmp = "";
+		if ($compiler =~ /flang/) {
+		    $vendor = FLANG;
+		    $openmp = "-fopenmp";
+		} else {
+		    $vendor = G77;
+		    $openmp = "";
+		}
 	    }
 
 	}
@@ -197,6 +203,12 @@ if ($compiler eq "") {
 	    $openmp = "-mp";
 	}
 
+	if ($compiler =~ /flang/) {
+	    $vendor = FLANG;
+	    $bu     = "_";
+	    $openmp = "-fopenmp";
+	}
+
 	if ($vendor eq "") {
 	    $nofortran = 1;
 	    $compiler = "gfortran";
@@ -221,6 +233,10 @@ if (!$?) {
 	if ($?) {
 	    $link = `$compiler $openmp -q32 -v ftest2.f 2>&1 && rm -f a.out a.exe`;
 	}
+        # for AIX
+	if ($?) {
+	    $link = `$compiler $openmp -maix32 -v ftest2.f 2>&1 && rm -f a.out a.exe`;
+	}
        #For gfortran MIPS
 	if ($?) {
     $mips_data = `$compiler_bin -E -dM - < /dev/null`;
@@ -237,6 +253,10 @@ if (!$?) {
 	$link = `$compiler $openmp -m64 -v ftest2.f 2>&1 && rm -f a.out a.exe`;
 	if ($?) {
 	    $link = `$compiler $openmp -q64 -v ftest2.f 2>&1 && rm -f a.out a.exe`;
+	}
+        # for AIX
+	if ($?) {
+	    $link = `$compiler $openmp -maix64 -v ftest2.f 2>&1 && rm -f a.out a.exe`;
 	}
        #For gfortran MIPS
 	if ($?) {
@@ -329,6 +349,10 @@ if ($link ne "") {
 
 if ($vendor eq "INTEL"){
     $linker_a .= "-lgfortran"
+}
+
+if ($vendor eq "FLANG"){
+    $linker_a .= "-lflang"
 }
 
 open(MAKEFILE, ">> $makefile") || die "Can't append $makefile";
